@@ -88,6 +88,7 @@ class Serializer {
 
     NeuralLayer[] deserialize_layers()
     {
+        import vectorflow.layers;
         NeuralLayer[] layers;
 
         while(!_f.eof)
@@ -96,7 +97,16 @@ class Serializer {
             try{ layer_type = read!string(); }
             catch(EOFException e){ break; } 
 
-            auto l = cast(NeuralLayer)Object.factory(layer_type);
+            NeuralLayer l;
+            if(layer_type == "vectorflow.layers.Linear")
+                l = Linear();
+            else if(layer_type == "vectorflow.layers.SparseData")
+                l = SparseData();
+            else
+            {
+                // try runtime build.
+                l = cast(NeuralLayer)Object.factory(layer_type);
+            }
             l.deser(this);
             layers ~= l;
             writeln("Deserialized ", l.to!string);
