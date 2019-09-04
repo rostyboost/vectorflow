@@ -867,6 +867,83 @@ class SparseKernelExpander : InputLayer
 }
 
 
+class Log1Exp : NeuralLayer {
+
+    float[] buff;
+
+    this()
+    {
+        super(0, LayerT.DENSE);
+        _learnable = false;
+    }
+    mixin opCallNew;
+
+    override void recompute_topology()
+    {
+        super.recompute_topology();
+        dim_out = dim_in;
+        buff.length = dim_out;
+        if(parents.length > 1)
+            throw new Exception("Can only have one parent.");
+    }
+
+    override void predict()
+    {
+        auto x = parents[0].out_d;
+        foreach(i, ref p; x)
+        {
+            if(p < 4)
+            {
+                auto ep = exp(p);
+                out_d[i] = log(1 + ep);
+                buff[i] = ep/(ep + 1);
+            }
+            else
+            {
+                out_d[i] = p;
+                buff[i] = 1.0;
+            }
+        }
+    }
+
+    override void accumulate_grad(float[] grad)
+    {
+        auto bg = backgrads[0];
+        foreach(i, ref g; grad)
+            bg[i] = buff[i] * grad[i];
+    }
+
+    override void set_optimizer(Optimizer opt_)
+    {
+        // nothing to optimize
+        optimizer = null;
+    }
+    
+    override void serialize(Serializer s)
+    {
+        s.write(buff.length);
+    }
+
+    override void deserialize(Serializer s)
+    {
+        buff.length = s.read!ulong();
+    }
+
+    override NeuralLayer dup()
+    {
+        auto cp = new Log1Exp();
+        cp.buff.length = buff.length;
+        cp.set_name(name);         
+        return cp;
+    }
+
+    override @property ulong num_params()
+    {
+        return 0;
+    }
+}
+
+
 class Data(alias TYPE) : InputLayer
 {
     this(){super();}
