@@ -1,6 +1,6 @@
 /**
  This module provides utility classes to iterate over data.
- 
+
  It is not mandatory to use them when using vectorflow, but you might find them
  useful and slightly more intuitive to use than the built-in range mechanism if
  you're a beginner with D.
@@ -12,7 +12,7 @@
  std.range.evenChunks, which might or might not work depending on your
  specific reader. To explicitly shard the data, just specify an `evenChunks`
  function in your reader implementation (see MultiFilesReader for an example).
- 
+
  Copyright: 2017 Netflix, Inc.
  License: $(LINK2 http://www.apache.org/licenses/LICENSE-2.0, Apache License Version 2.0)
  */
@@ -65,7 +65,7 @@ class DataFileReader(T) : DataReader!T
     protected override void share_save_params(DataReader!T e)
     {
         super.share_save_params(e);
-        _f.seek((cast(DataFileReader!T)e)._f.tell);
+        _f.seek(e.to!(DataFileReader!T)._f.tell);
     }
 }
 
@@ -73,8 +73,7 @@ class DataFileReader(T) : DataReader!T
 class MultiFilesReader(T)
 {
     DataFileReader!(T)[] readers;
-
-    protected ulong _currInd;
+    protected size_t _currInd;
     public @property ulong currentFileIndex(){return _currInd;}
 
     private bool _cached;
@@ -110,7 +109,7 @@ class MultiFilesReader(T)
                     result = dg(obs);
                     if(result)
                         break;
-                }                
+                }
             }
         }
         rewind();
@@ -193,7 +192,7 @@ class MultiFilesReader(T)
 class DataReader(T)
 {
     protected T _obs;
-    protected ulong _length;
+    protected size_t _length;
 
     T[] _cache;
     protected bool _start_cache;
@@ -276,7 +275,7 @@ class DataReader(T)
 
     abstract void rewind();
 
-    @property ulong length()
+    @property size_t length()
     {
         if(_length == -1)
         {

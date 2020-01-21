@@ -26,7 +26,7 @@ auto init_matrix_rand(T)(T[][] M, double rand_scale)
     return M;
 }
 
-auto allocate_matrix_zero(T)(ulong num_row, ulong num_col)
+auto allocate_matrix_zero(T)(size_t num_row, size_t num_col)
 {
     T[][] M;
     M.length = num_row;
@@ -255,7 +255,7 @@ final class Hasher {
     }
 }
 
-package static void ct_msg(string msg)()
+package mixin template ct_msg(string msg)
 {
     pragma(msg, "[VECTORFLOW-COMPILE] " ~ msg);
 }

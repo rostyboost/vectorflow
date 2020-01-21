@@ -44,7 +44,7 @@ class Serializer {
 
     private void write_str(string s)
     {
-        write(s.length);
+        write(s.length.to!ulong);
         auto x = cast(ubyte[])s;
         _f.rawWrite(x);
     }
@@ -57,7 +57,7 @@ class Serializer {
         {
             ulong str_sz;
             _f.rawRead((&str_sz)[0..1]);
-            auto str = new ubyte[str_sz];
+            auto str = new ubyte[str_sz.to!size_t];
             str = _f.rawRead(str);
             return cast(string)str;
         }
@@ -71,14 +71,14 @@ class Serializer {
 
     void write_vec(T)(T vec) if(isArray!T)
     {
-        write(vec.length);
+        write(vec.length.to!ulong);
         foreach(v; vec)
             write(v);
     }
 
     T[] read_vec(T)()
     {
-        auto len = read!ulong();
+        auto len = read!ulong().to!size_t;
         auto res = new T[len];
         foreach(i; 0..len)
             res[i] = read!T();
@@ -96,7 +96,7 @@ class Serializer {
             try{ layer_type = read!string(); }
             catch(EOFException e){ break; } 
 
-            auto l = cast(NeuralLayer)Object.factory(layer_type);
+            auto l = Object.factory(layer_type).to!NeuralLayer;
             l.deser(this);
             layers ~= l;
             writeln("Deserialized ", l.to!string);

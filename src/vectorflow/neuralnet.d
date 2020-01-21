@@ -8,8 +8,8 @@ module vectorflow.neuralnet;
 
 private
 {
-import std.algorithm : canFind, countUntil, map, startsWith, sum;
-import std.array : split;
+import std.algorithm : canFind, countUntil, map, sort, startsWith, sum;
+import std.array;
 import std.conv : text, to;
 import std.file : exists, FileException, remove;
 import std.format : format;
@@ -130,7 +130,7 @@ class NeuralNet {
             if(opt !is null)
                 throw new Exception(
                     "A root is not learnable, it cannot have an optimizer.");
-            add_root(cast(InputLayer)layer);
+            add_root(layer.to!InputLayer);
         }
         else
         {
@@ -227,7 +227,8 @@ class NeuralNet {
     * Compute the prediction of the net when passing the arguments to the
     * root(s) of the net.
     *
-    * Params: the data to feed to the roots in proper order
+    * Params:
+    *    args = the data to feed to the roots in proper order
     *
     * Returns: array of last layer neurons values
     *
@@ -609,15 +610,15 @@ class NeuralNet {
         auto ser = new Serializer(&f);
 
         // serialize root names
-        ser.write(roots.length);
+        ser.write(roots.length.to!ulong);
         foreach(r; roots)
             ser.write(r.name);
 
         // serialize edges
-        ser.write(edges.length);
-        foreach(p; edges.byKeyValue())
+        ser.write(edges.length.to!ulong);
+        foreach(p; edges.byKeyValue().array.sort!((x, y) => x.key < y.key))
         {
-            ser.write(p.value.length);
+            ser.write(p.value.length.to!ulong);
             foreach(child; p.value)
             {
                 ser.write(p.key ~ "," ~ child); // parent,child
@@ -672,12 +673,12 @@ class NeuralNet {
         foreach(l; layers)
         {
             if(l.name in root_names)
-                nn.add_root(cast(InputLayer)l);
+                nn.add_root(l.to!InputLayer);
             else
                 nn.add(l);
         }
 
-        foreach(p; edges.byKeyValue())
+        foreach(p; edges.byKeyValue().array.sort!((x, y) => x.key < y.key))
             foreach(child; p.value)
                 nn.wire(p.key, child, false);
         foreach(l; nn.layers)
@@ -730,16 +731,8 @@ class NeuralNet {
     }
 }
 
-package template isFeaturesField(string s)
-{
-    enum isFeaturesField = s.startsWith("features");
-}
-
-package template isLearnableRow(T)
-{
-    enum isLearnableRow = anySatisfy!(
-            isFeaturesField, __traits(allMembers, T));
-}
+package enum isFeaturesField(string s) = s.startsWith("features");
+package enum isLearnableRow(T) = anySatisfy!(isFeaturesField, __traits(allMembers, T));
 
 
 private void optimize_graph(NeuralNet net)
@@ -758,8 +751,5 @@ private void optimize_graph(NeuralNet net)
 
 version(assert)
 {
-    static this()
-    {
-        ct_msg!("Non-release build.");
-    }
+    mixin ct_msg!("Non-release build.");
 }
